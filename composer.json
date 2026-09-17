@@ -64,6 +64,7 @@
         "shipmonk/composer-dependency-analyser": "^1.8",
         "testo/assert": "^0.1.13",
         "testo/bridge-infection": "^0.1.8",
+        "testo/filter": "^0.1.6",
         "testo/lifecycle": "^0.1.5",
         "testo/test": "^0.1.6",
         "testo/testo": "^0.10.41",
@@ -104,6 +105,7 @@
         "dependency-analyser": "composer-dependency-analyser",
         "rector": "rector",
         "test": "testo",
+        "test:unit": "testo --suite=Unit",
         "test:feature": "testo --suite=Feature",
         "test:acceptance": "testo --suite=Acceptance"
     }

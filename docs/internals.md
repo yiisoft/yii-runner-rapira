@@ -8,9 +8,10 @@ The package is tested with [Testo](https://php-testo.github.io/). To run all sui
 ./vendor/bin/testo
 ```
 
-Tests are split into suites (see `testo.php`): `Feature` runs the runner against a fake Rapira runtime,
-`Acceptance` starts the real `rapira` binary in every mode and sends HTTP requests to it. The binary is
-downloaded into `runtime/bin` on demand. Run one suite with:
+Tests are split into suites (see `testo.php`): `Unit` isolates a single class with doubles, `Feature`
+runs the runner against a fake Rapira runtime, `Acceptance` starts the real `rapira` binary in every
+mode and sends HTTP requests to it. The binary is downloaded into `runtime/bin` on demand. Run one
+suite with:
 
 ```shell
 ./vendor/bin/testo --suite=Feature
@@ -23,6 +24,9 @@ The package tests are checked with [Infection](https://infection.github.io/) mut
 ```shell
 ./vendor/bin/infection
 ```
+
+The `Acceptance` suite is excluded from the run through `testFrameworkOptions` in `infection.json.dist`:
+it boots a real `rapira` server, which every mutant would pay for again.
 
 ## Static analysis
 

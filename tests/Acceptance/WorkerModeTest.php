@@ -6,6 +6,7 @@ namespace Yiisoft\Yii\Runner\Rapira\Tests\Acceptance;
 
 use Rapira\Sdk\Common\Mode;
 use Rapira\Sdk\Testing\Testo\Attribute\RunRapira;
+use Testo\Filter\Group;
 use Testo\Test;
 use Yiisoft\Yii\Runner\Rapira\Tests\Acceptance\Support\ServerRequests;
 
@@ -15,6 +16,7 @@ use Yiisoft\Yii\Runner\Rapira\Tests\Acceptance\Support\ServerRequests;
  */
 #[Test]
 #[RunRapira(mode: Mode::Worker, address: self::ADDRESS)]
+#[Group('acceptance')]
 final class WorkerModeTest
 {
     use ServerRequests;
