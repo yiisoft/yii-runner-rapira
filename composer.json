@@ -52,6 +52,7 @@
         "ext-curl": "*",
         "friendsofphp/php-cs-fixer": "^3.95.1",
         "httpsoft/http-message": "^1.0",
+        "internal/dload": "^1.16",
         "llm/skills": "^1.9",
         "psr/event-dispatcher": "^1.0",
         "psr/http-factory": "^1.0",
