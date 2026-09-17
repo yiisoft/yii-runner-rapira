@@ -1,5 +1,6 @@
 {
     "testFramework": "testo",
+    "testFrameworkOptions": "--group=!acceptance",
     "source": {
         "directories": [
             "src"

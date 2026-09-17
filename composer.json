@@ -52,6 +52,8 @@
         "ext-curl": "*",
         "friendsofphp/php-cs-fixer": "^3.95.1",
         "httpsoft/http-message": "^1.0",
+        "infection/infection": "^0.35.4",
+        "internal/dload": "^1.16",
         "llm/skills": "^1.9",
         "psr/event-dispatcher": "^1.0",
         "psr/http-factory": "^1.0",
@@ -59,10 +61,10 @@
         "psr/http-server-middleware": "^1.0",
         "rapira/testing": "^0.1.4",
         "rector/rector": "^2.6.3",
-        "roave/infection-static-analysis-plugin": "^1.35",
         "shipmonk/composer-dependency-analyser": "^1.8",
         "testo/assert": "^0.1.13",
         "testo/bridge-infection": "^0.1.8",
+        "testo/filter": "^0.1.6",
         "testo/lifecycle": "^0.1.5",
         "testo/test": "^0.1.6",
         "testo/testo": "^0.10.41",
@@ -103,6 +105,7 @@
         "dependency-analyser": "composer-dependency-analyser",
         "rector": "rector",
         "test": "testo",
+        "test:unit": "testo --suite=Unit",
         "test:feature": "testo --suite=Feature",
         "test:acceptance": "testo --suite=Acceptance"
     }

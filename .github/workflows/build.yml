@@ -19,6 +19,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DLOAD_CACHE_DIR: ${{ github.workspace }}/runtime/dload-cache
+
 jobs:
   testo:
     name: PHP ${{ matrix.php }} on ${{ matrix.os }}
@@ -50,13 +53,26 @@ jobs:
       - name: Install dependencies
         uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
 
+      # The acceptance suite fetches the rapira binary through dload; the registry spares its API calls.
+      # A GitHub cache entry is immutable, so the run_id keeps the key missing and restore-keys reads the newest.
+      - name: Restore the dload version registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: runtime/dload-cache
+          key: dload-registry-${{ github.run_id }}
+          restore-keys: dload-registry-
+
       - name: Run tests
         if: matrix.os != 'ubuntu-latest'
         run: vendor/bin/testo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests with coverage
         if: matrix.os == 'ubuntu-latest'
         run: vendor/bin/testo --coverage-clover=coverage.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'

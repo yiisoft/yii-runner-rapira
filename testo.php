@@ -17,6 +17,7 @@ $rapiraBinary = $projectRoot . '/runtime/bin/rapira' . ($isWindows ? '.exe' : ''
 return new ApplicationConfig(
     src: ['src'],
     suites: [
+        new SuiteConfig(name: 'Unit', location: ['tests/Unit']),
         new SuiteConfig(name: 'Feature', location: ['tests/Feature']),
         new SuiteConfig(
             name: 'Acceptance',
