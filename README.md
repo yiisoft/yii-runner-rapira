@@ -33,11 +33,6 @@ The package could be installed with [Composer](https://getcomposer.org):
 composer require yiisoft/yii-runner-rapira:@dev rapira/contract:@dev
 ```
 
-The runner and `rapira/contract` do not have stable releases yet. Both development versions must be
-allowed explicitly in your application's root `composer.json`: Composer does not inherit stability
-flags from dependencies. The command above keeps the default `minimum-stability` setting for all other
-packages.
-
 ## General usage
 
 In your application root create `worker.php`:
