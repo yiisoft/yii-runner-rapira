@@ -11,6 +11,8 @@
     <stubs>
         <!-- The contract ships its function declarations outside the autoloader. -->
         <file name="vendor/rapira/contract/src/functions.php" />
+        <!-- Worker-mode functions are provided by the runtime, not the contract. -->
+        <file name="stubs/rapira.php" />
     </stubs>
     <projectFiles>
         <directory name="src" />
