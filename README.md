@@ -30,7 +30,7 @@ application server with PHP embedded in the process.
 The package could be installed with [Composer](https://getcomposer.org):
 
 ```shell
-composer require yiisoft/yii-runner-rapira
+composer require yiisoft/yii-runner-rapira:@dev rapira/contract:@dev
 ```
 
 ## General usage
