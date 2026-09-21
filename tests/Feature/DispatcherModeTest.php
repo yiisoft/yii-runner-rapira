@@ -19,6 +19,7 @@ use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeClass;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
+use WeakReference;
 use Yiisoft\Test\Support\EventDispatcher\SimpleEventDispatcher;
 use Yiisoft\Yii\Http\Application;
 use Yiisoft\Yii\Http\Event\AfterEmit;
@@ -114,6 +115,27 @@ final class DispatcherModeTest
         Assert::same($second->getBody(), 'partial');
         Assert::false($second->isFinalized());
         Assert::true($this->events->isClassTriggered(AfterEmit::class, 2));
+    }
+
+    #[Test]
+    public function failedExchangeIsReleasedBeforeWaitingForMoreWork(): void
+    {
+        $exchange = new FakeExchange();
+        $reference = WeakReference::create($exchange);
+        $dispatcher = new FakeHttpDispatcher($exchange);
+        unset($exchange);
+
+        $receives = 0;
+        $dispatcher->beforeReceive = static function () use ($reference, &$receives): void {
+            if (++$receives === 2) {
+                Assert::same($reference->get(), null);
+            }
+        };
+        $this->worker->dispatcher = $dispatcher;
+
+        $this->runner('failing-body')->run();
+
+        Assert::same($receives, 2);
     }
 
     #[Test]

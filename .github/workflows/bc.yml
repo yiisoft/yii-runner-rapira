@@ -18,7 +18,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.release.outputs.exists }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check for a release to compare against
+        id: release
+        shell: bash
+        run: |
+          if git tag --list | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+($|[-+])'; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+            echo 'No released version to check for backwards compatibility.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   roave_bc_check:
+    needs: release
+    if: needs.release.outputs.exists == 'true'
     uses: yiisoft/actions/.github/workflows/bc.yml@master
     with:
       os: >-

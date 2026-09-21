@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support;
 
+use Closure;
 use LogicException;
 use Rapira\Exception\ClosedException;
 use Rapira\Http\Exchange;
@@ -18,6 +19,9 @@ use function array_shift;
  */
 final class FakeHttpDispatcher implements HttpDispatcher
 {
+    /** @var Closure(): void|null */
+    public ?Closure $beforeReceive = null;
+
     /** @var list<Exchange> */
     private array $queue;
 
@@ -38,6 +42,8 @@ final class FakeHttpDispatcher implements HttpDispatcher
 
     public function receive(int $timeout = -1): Exchange
     {
+        ($this->beforeReceive)?->__invoke();
+
         return array_shift($this->queue) ?? throw new ClosedException('Drained.');
     }
 

@@ -42,36 +42,43 @@ final readonly class DispatcherServer
     {
         try {
             while (true) {
-                $exchange = $this->dispatcher->receive();
-
-                // The host closed the unit while it waited in the queue: the client left or the deadline
-                // passed. Nothing the application produces for it would be accepted.
-                if ($exchange->isCancelled()) {
-                    continue;
-                }
-
-                $request = $this->cycle->begin($this->requestFactory->create($exchange));
-                $response = $this->cycle->handle($request);
-                $emitter = new ExchangeEmitter($exchange);
-
-                try {
-                    $emitter->emit($response);
-                } catch (WorkDiscardedException) {
-                    // The host closed the exchange meanwhile and has already failed it. Nobody to answer.
-                } catch (Throwable $throwable) {
-                    // A body that failed to render, a header the wire rejects, or a fault in the emitter
-                    // itself. The error catcher logs it either way; the answer is best effort.
-                    $response = $this->cycle->recover($request, $throwable);
-                    try {
-                        $emitter->emit($response);
-                    } catch (Throwable) {
-                    }
-                } finally {
-                    $this->cycle->finish($response);
-                }
+                $this->serve($this->dispatcher->receive());
             }
         } catch (ClosedException) {
             // Drained: no more work will ever arrive.
+        }
+    }
+
+    /**
+     * Keeps request-local references out of the receive loop, so an unfinalized exchange is destroyed
+     * and failed by the host before the worker waits for more work.
+     */
+    private function serve(Exchange $exchange): void
+    {
+        // The host closed the unit while it waited in the queue: the client left or the deadline
+        // passed. Nothing the application produces for it would be accepted.
+        if ($exchange->isCancelled()) {
+            return;
+        }
+
+        $request = $this->cycle->begin($this->requestFactory->create($exchange));
+        $response = $this->cycle->handle($request);
+        $emitter = new ExchangeEmitter($exchange);
+
+        try {
+            $emitter->emit($response);
+        } catch (WorkDiscardedException) {
+            // The host closed the exchange meanwhile and has already failed it. Nobody to answer.
+        } catch (Throwable $throwable) {
+            // A body that failed to render, a header the wire rejects, or a fault in the emitter
+            // itself. The error catcher logs it either way; the answer is best effort.
+            $response = $this->cycle->recover($request, $throwable);
+            try {
+                $emitter->emit($response);
+            } catch (Throwable) {
+            }
+        } finally {
+            $this->cycle->finish($response);
         }
     }
 }
