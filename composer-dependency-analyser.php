@@ -8,9 +8,4 @@ return (new Configuration())
     ->disableComposerAutoloadPathScan()
     ->setFileExtensions(['php'])
     ->addPathToScan(__DIR__ . '/src', isDev: false)
-    ->addPathToScan(__DIR__ . '/tests', isDev: true)
-    ->ignoreUnknownFunctions([
-        'Rapira\get_dispatcher',
-        'Rapira\get_mode',
-        'Rapira\handle_request',
-    ]);
+    ->addPathToScan(__DIR__ . '/tests', isDev: true);
