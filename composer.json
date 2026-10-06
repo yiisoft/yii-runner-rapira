@@ -59,7 +59,7 @@
         "psr/http-factory": "^1.1",
         "psr/http-server-handler": "^1.0.2",
         "psr/http-server-middleware": "^1.0.2",
-        "rapira/testing": "^0.1.6",
+        "rapira/testing": "^0.1.7",
         "rector/rector": "^2.7",
         "shipmonk/composer-dependency-analyser": "^1.8.4",
         "testo/assert": "^0.1.17",

@@ -21,6 +21,7 @@ use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Rapira\Mode;
 use Rapira\Sdk\Testing\Double\FakeRuntime;
+use Rapira\Sdk\Testing\Double\WorkerRequest;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\UploadedFileFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
@@ -87,11 +88,10 @@ final class RapiraApplicationRunnerTest
     #[BeforeTest]
     public function setUp(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
         self::$bootstrapExecuted = false;
         self::$cycleDestroyed = false;
 
-        $this->runtime = (new FakeRuntime(Mode::Worker, requests: [[]]))->install();
+        $this->runtime = (new FakeRuntime(Mode::Worker, requests: [WorkerRequest::create('GET', '/')]))->install();
 
         $this->runner = new RapiraApplicationRunner(
             rootPath: $this->supportPath(),
@@ -237,7 +237,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testRunReusesErrorCatcherAcrossWorkerRequests(): void
     {
-        $this->runtime->requests = [[], []];
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $container = $this->createContainerWithTrackedErrorCatcher();
         $runner = $this->runner->withContainer($container);
@@ -303,7 +303,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testRunRethrowsWhenEmitterFails(): void
     {
-        $this->runtime->requests = [[], []];
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $runner = new RapiraApplicationRunner(
             rootPath: $this->supportPath(),
@@ -447,7 +447,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testWorkerModeResetsStateBetweenRequests(): void
     {
-        $this->runtime->requests = [[], []];
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $emitter = new FakeEmitter();
         $runner = new RapiraApplicationRunner(
@@ -466,9 +466,9 @@ final class RapiraApplicationRunnerTest
     }
 
     #[Test]
-    public function testWorkerModeContinuesUntilHandlerStops(): void
+    public function testWorkerModeServesUntilTheHostStops(): void
     {
-        $this->runtime->requests = [[], []];
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $runner = (new RapiraApplicationRunner(
             rootPath: $this->supportPath(),
@@ -486,8 +486,8 @@ final class RapiraApplicationRunnerTest
     public function testWorkerModeDoesNotLeakAuthenticatedUserToNextRequest(): void
     {
         $this->runtime->requests = [
-            ['HTTP_X_USER_ID' => 'alice'],
-            [],
+            WorkerRequest::create('GET', '/', ['HTTP_X_USER_ID' => 'alice']),
+            WorkerRequest::create('GET', '/'),
         ];
 
         $emitter = new FakeEmitter();
