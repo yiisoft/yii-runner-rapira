@@ -1,6 +1,6 @@
 [http]
 listen = "127.0.0.1:8080"
 
-[pool]
+[http.pool]
 entrypoint = "worker.php"
 mode = "worker"
