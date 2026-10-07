@@ -78,4 +78,11 @@ return [
             ],
         ],
     ],
+    'request-parity' => [
+        'di-web' => [
+            '/' => [
+                'di-web-request-parity.php',
+            ],
+        ],
+    ],
 ];

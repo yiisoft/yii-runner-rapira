@@ -35,3 +35,6 @@ composer.phar
 
 # Testo coverage report
 /coverage.xml
+
+# per-run configs the rapira/testing plugin writes next to the app
+.rapira-*.toml

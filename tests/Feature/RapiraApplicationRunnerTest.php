@@ -19,6 +19,9 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Rapira\Mode;
+use Rapira\Sdk\Testing\Double\FakeRuntime;
+use Rapira\Sdk\Testing\Double\WorkerRequest;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\UploadedFileFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
@@ -29,7 +32,6 @@ use ReflectionProperty;
 use Testo\Assert;
 use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
-use Testo\Lifecycle\BeforeClass;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
 use Throwable;
@@ -66,7 +68,6 @@ use Yiisoft\Yii\Runner\ApplicationRunner;
 use Yiisoft\Yii\Runner\Rapira\RapiraApplicationRunner;
 use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\CurrentUser;
 use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\CurrentUserMiddleware;
-use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\RapiraWorker;
 
 use function array_key_exists;
 use function dirname;
@@ -81,18 +82,16 @@ final class RapiraApplicationRunnerTest
     public static bool $bootstrapExecuted = false;
     public static bool $cycleDestroyed = false;
 
-    private RapiraWorker $worker;
+    private FakeRuntime $runtime;
     private RapiraApplicationRunner $runner;
 
     #[BeforeTest]
     public function setUp(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
         self::$bootstrapExecuted = false;
         self::$cycleDestroyed = false;
 
-        $this->worker = new RapiraWorker();
-        $this->worker->activate();
+        $this->runtime = (new FakeRuntime(Mode::Worker, requests: [WorkerRequest::create('GET', '/')]))->install();
 
         $this->runner = new RapiraApplicationRunner(
             rootPath: $this->supportPath(),
@@ -103,13 +102,7 @@ final class RapiraApplicationRunnerTest
     #[AfterTest]
     public function tearDown(): void
     {
-        $this->worker->cleanup();
-    }
-
-    #[BeforeClass]
-    public static function registerRapiraStub(): void
-    {
-        RapiraWorker::register();
+        FakeRuntime::reset();
     }
 
     #[Test]
@@ -244,7 +237,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testRunReusesErrorCatcherAcrossWorkerRequests(): void
     {
-        $this->worker->keepRunningUntil = 2;
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $container = $this->createContainerWithTrackedErrorCatcher();
         $runner = $this->runner->withContainer($container);
@@ -253,7 +246,7 @@ final class RapiraApplicationRunnerTest
         $runner->run();
         ob_get_clean();
 
-        Assert::same($this->worker->handleRequestCalls, 2);
+        Assert::same($this->runtime->servedRequests, 2);
         // The `ErrorCatcher` must be fetched from the container only once and reused for every
         // subsequent throwable handled within the same worker run, no matter how many requests fail.
         Assert::same(count($container->errorCatcherInstances), 1);
@@ -310,7 +303,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testRunRethrowsWhenEmitterFails(): void
     {
-        $this->worker->keepRunningUntil = 2;
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $runner = new RapiraApplicationRunner(
             rootPath: $this->supportPath(),
@@ -322,7 +315,7 @@ final class RapiraApplicationRunnerTest
         $runner->run();
         $output = ob_get_clean();
 
-        Assert::same($this->worker->handleRequestCalls, 2);
+        Assert::same($this->runtime->servedRequests, 2);
         Assert::same(preg_match('/^Exception with message "Failure while creating response stream"/', $output), 1);
     }
 
@@ -442,7 +435,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testRunAndGetResponseThrowsWhenNothingWasEmitted(): void
     {
-        $this->worker->keepRunningUntil = 0;
+        $this->runtime->requests = [];
 
         $runner = new RapiraApplicationRunner($this->supportPath(), false);
 
@@ -454,7 +447,7 @@ final class RapiraApplicationRunnerTest
     #[Test]
     public function testWorkerModeResetsStateBetweenRequests(): void
     {
-        $this->worker->keepRunningUntil = 2;
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $emitter = new FakeEmitter();
         $runner = new RapiraApplicationRunner(
@@ -469,13 +462,13 @@ final class RapiraApplicationRunnerTest
         $response = $emitter->getLastResponse();
         Assert::instanceOf($response, ResponseInterface::class);
         Assert::same((string) $response->getBody(), '1');
-        Assert::same($this->worker->handleRequestCalls, 2);
+        Assert::same($this->runtime->servedRequests, 2);
     }
 
     #[Test]
-    public function testWorkerModeContinuesUntilHandlerStops(): void
+    public function testWorkerModeServesUntilTheHostStops(): void
     {
-        $this->worker->keepRunningUntil = 2;
+        $this->runtime->requests = [WorkerRequest::create('GET', '/'), WorkerRequest::create('GET', '/')];
 
         $runner = (new RapiraApplicationRunner(
             rootPath: $this->supportPath(),
@@ -486,16 +479,15 @@ final class RapiraApplicationRunnerTest
         $runner->run();
         ob_get_clean();
 
-        Assert::same($this->worker->handleRequestCalls, 2);
+        Assert::same($this->runtime->servedRequests, 2);
     }
 
     #[Test]
     public function testWorkerModeDoesNotLeakAuthenticatedUserToNextRequest(): void
     {
-        $this->worker->keepRunningUntil = 2;
-        $this->worker->requestServerParameters = [
-            ['HTTP_X_USER_ID' => 'alice'],
-            [],
+        $this->runtime->requests = [
+            WorkerRequest::create('GET', '/', ['HTTP_X_USER_ID' => 'alice']),
+            WorkerRequest::create('GET', '/'),
         ];
 
         $emitter = new FakeEmitter();
@@ -510,7 +502,7 @@ final class RapiraApplicationRunnerTest
         $response = $emitter->getLastResponse();
         Assert::instanceOf($response, ResponseInterface::class);
         Assert::same((string) $response->getBody(), 'guest');
-        Assert::same($this->worker->handleRequestCalls, 2);
+        Assert::same($this->runtime->servedRequests, 2);
     }
 
     #[Test]

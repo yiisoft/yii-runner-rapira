@@ -11,12 +11,12 @@ use Rapira\DispatcherInfo;
 use Rapira\Http\Request;
 use Rapira\InetAddress;
 use Rapira\Mode;
+use Rapira\Sdk\Testing\Double\FakeRuntime;
 use Rapira\Sdk\Http\DispatcherRequestFactory;
 use Rapira\Work;
 use Testo\Assert;
 use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
-use Testo\Lifecycle\BeforeClass;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
 use WeakReference;
@@ -26,36 +26,27 @@ use Yiisoft\Yii\Http\Event\AfterEmit;
 use Yiisoft\Yii\Runner\Rapira\Internal\DispatcherServer;
 use Yiisoft\Yii\Runner\Rapira\Internal\RequestCycle;
 use Yiisoft\Yii\Runner\Rapira\RapiraApplicationRunner;
-use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\FakeExchange;
-use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\FakeHttpDispatcher;
-use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\RapiraWorker;
+use Rapira\Sdk\Testing\Double\Http\FakeExchange;
+use Rapira\Sdk\Testing\Double\Http\FakeHttpDispatcher;
 
 use function dirname;
 use function str_contains;
 
 final class DispatcherModeTest
 {
-    private RapiraWorker $worker;
+    private FakeRuntime $runtime;
     private SimpleEventDispatcher $events;
 
     #[BeforeTest]
     public function setUp(): void
     {
-        $this->worker = new RapiraWorker();
-        $this->worker->mode = Mode::Dispatcher;
-        $this->worker->activate();
+        $this->runtime = (new FakeRuntime(Mode::Dispatcher))->install();
     }
 
     #[AfterTest]
     public function tearDown(): void
     {
-        $this->worker->cleanup();
-    }
-
-    #[BeforeClass]
-    public static function registerRapiraStub(): void
-    {
-        RapiraWorker::register();
+        FakeRuntime::reset();
     }
 
     #[Test]
@@ -63,7 +54,7 @@ final class DispatcherModeTest
     {
         $first = new FakeExchange($this->request('first'));
         $second = new FakeExchange($this->request('second'));
-        $this->worker->dispatcher = new FakeHttpDispatcher($first, $second);
+        $this->runtime->dispatcher = new FakeHttpDispatcher($first, $second);
 
         $this->runner('run-without-emit-with-request')->run();
 
@@ -78,7 +69,7 @@ final class DispatcherModeTest
     public function handlerFailureIsAnsweredWithAnErrorResponse(): void
     {
         $exchange = new FakeExchange();
-        $this->worker->dispatcher = new FakeHttpDispatcher($exchange);
+        $this->runtime->dispatcher = new FakeHttpDispatcher($exchange);
 
         $this->runner('throwing-middleware')->run();
 
@@ -91,7 +82,7 @@ final class DispatcherModeTest
     public function bodyFailureIsAnsweredWithAnErrorResponse(): void
     {
         $exchange = new FakeExchange();
-        $this->worker->dispatcher = new FakeHttpDispatcher($exchange);
+        $this->runtime->dispatcher = new FakeHttpDispatcher($exchange);
 
         $this->runner('view-response-with-error')->run();
 
@@ -131,7 +122,7 @@ final class DispatcherModeTest
                 Assert::same($reference->get(), null);
             }
         };
-        $this->worker->dispatcher = $dispatcher;
+        $this->runtime->dispatcher = $dispatcher;
 
         $this->runner('failing-body')->run();
 
@@ -167,7 +158,7 @@ final class DispatcherModeTest
     #[Test]
     public function refusesADispatcherOfAnotherPlugin(): void
     {
-        $this->worker->dispatcher = new class implements Dispatcher {
+        $this->runtime->dispatcher = new class implements Dispatcher {
             public function name(): string
             {
                 return 'jobs';

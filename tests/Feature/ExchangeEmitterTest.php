@@ -14,7 +14,7 @@ use Testo\Test;
 use Yiisoft\Yii\Runner\Rapira\ExchangeEmitter;
 use RuntimeException;
 use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\FailingStream;
-use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\FakeExchange;
+use Rapira\Sdk\Testing\Double\Http\FakeExchange;
 use Yiisoft\Yii\Runner\Rapira\Tests\Feature\Support\UnsizedStream;
 
 use function fopen;
