@@ -81,7 +81,7 @@ Create a `rapira.toml` next to it:
 [http]
 listen = "127.0.0.1:8000"
 
-[pool]
+[http.pool]
 entrypoint = "worker.php"
 mode = "worker"
 ```
@@ -89,15 +89,15 @@ mode = "worker"
 Then start the server:
 
 ```shell
-rapira serve
+rapira serve rapira.toml
 ```
 
 See the [Rapira documentation](https://rapira.rs/) for the full list of configuration options.
 
 ### Modes
 
-Rapira runs the entry script in one of three modes, chosen by `[pool] mode`. The runner detects the mode at
-startup and serves accordingly, so the same `worker.php` works in every one of them:
+Rapira runs the entry script in one of three modes, chosen by `mode` in the `[http.pool]` section. The runner
+detects the mode at startup and serves accordingly, so the same `worker.php` works in every one of them:
 
 - `classic` — one process per request, the way PHP-FPM works. Handy for debugging: nothing survives between
   requests.
@@ -108,7 +108,7 @@ startup and serves accordingly, so the same `worker.php` works in every one of t
 In `worker` and `dispatcher` modes the process outlives the request, so stateful services must be reset
 between requests. For resetters configuration, see
 [Yii DI `StateResetter` documentation](https://github.com/yiisoft/di#resetting-services-state). To recycle
-a process after a number of handled requests, set `max_requests` in the `[pool]` section of `rapira.toml`.
+a process after a number of handled requests, set `max_requests` in the `[http.pool]` section of `rapira.toml`.
 
 ### Configuration
 
