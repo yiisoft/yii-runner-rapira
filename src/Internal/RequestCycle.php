@@ -26,7 +26,6 @@ use function microtime;
 final class RequestCycle
 {
     private ?ErrorCatcher $errorCatcher = null;
-    private ?StateResetter $stateResetter = null;
 
     public function __construct(
         private readonly ContainerInterface $container,
@@ -74,7 +73,7 @@ final class RequestCycle
         $this->application->afterEmit($response);
 
         /** @var StateResetter $stateResetter */
-        $stateResetter = $this->stateResetter ??= $this->container->get(StateResetter::class);
+        $stateResetter = $this->container->get(StateResetter::class);
         $stateResetter->reset();
         gc_collect_cycles();
     }

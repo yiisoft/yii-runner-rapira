@@ -34,7 +34,7 @@ final class RequestCycleTest
     }
 
     #[Test]
-    public function theStateResetterIsResolvedOnceAndReusedByEveryRequest(): void
+    public function theStateResetterIsResolvedForEveryRequest(): void
     {
         $container = new RecordingContainer([
             StateResetter::class => new StateResetter(new SimpleContainer()),
@@ -44,7 +44,7 @@ final class RequestCycleTest
         $cycle->finish(new Response());
         $cycle->finish(new Response());
 
-        Assert::same($container->calls[StateResetter::class], 1);
+        Assert::same($container->calls[StateResetter::class], 2);
     }
 
     private function cycle(ContainerInterface $container): RequestCycle
