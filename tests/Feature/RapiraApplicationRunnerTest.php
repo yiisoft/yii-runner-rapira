@@ -116,6 +116,46 @@ final class RapiraApplicationRunnerTest
     }
 
     #[Test]
+    public function testRunInClassicModeServesOneRequest(): void
+    {
+        $this->runtime = (new FakeRuntime(Mode::Classic))->install();
+        $server = $_SERVER;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        try {
+            ob_start();
+            $this->runner->run();
+            $output = ob_get_clean();
+        } finally {
+            $_SERVER = $server;
+        }
+
+        Assert::same($output, 'OK');
+    }
+
+    #[Test]
+    public function testRunAndGetResponseInClassicMode(): void
+    {
+        $this->runtime = (new FakeRuntime(Mode::Classic))->install();
+        $runner = new RapiraApplicationRunner($this->supportPath(), false);
+        $server = $_SERVER;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        try {
+            ob_start();
+            $response = $runner->runAndGetResponse();
+            $output = ob_get_clean();
+        } finally {
+            $_SERVER = $server;
+        }
+
+        Assert::same($response->getStatusCode(), 200);
+        Assert::same($output, '');
+    }
+
+    #[Test]
     public function testRunWithoutBootstrapAndCheckEvents(): void
     {
         $runner = new RapiraApplicationRunner(
